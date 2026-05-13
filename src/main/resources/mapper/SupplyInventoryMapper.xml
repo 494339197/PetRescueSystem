@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.SupplyInventoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.SupplyInventory">
+        <id column="supply_id" property="supplyId" jdbcType="BIGINT"/>
+        <result column="shelter_id" property="shelterId" jdbcType="BIGINT"/>
+        <result column="item_name" property="itemName" jdbcType="VARCHAR"/>
+        <result column="category" property="category" jdbcType="INTEGER"/>
+        <result column="quantity" property="quantity" jdbcType="INTEGER"/>
+        <result column="unit" property="unit" jdbcType="VARCHAR"/>
+        <result column="min_threshold" property="minThreshold" jdbcType="INTEGER"/>
+        <result column="last_updated" property="lastUpdated" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="selectByShelterId" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE shelter_id = #{shelterId} ORDER BY category, item_name
+    </select>
+
+    <select id="selectByCategory" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE category = #{category} ORDER BY item_name
+    </select>
+
+    <select id="selectLowStockItems" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE shelter_id = #{shelterId} AND quantity &lt;= min_threshold ORDER BY (quantity - min_threshold) ASC
+    </select>
+
+    <select id="selectSupplyPage" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE 1=1
+        <if test="shelterId != null">AND shelter_id = #{shelterId}</if>
+        <if test="category != null">AND category = #{category}</if>
+        ORDER BY category, item_name
+    </select>
+
+    <select id="countByShelterId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM supply_inventory WHERE shelter_id = #{shelterId}
+    </select>
+
+    <select id="countByCategory" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM supply_inventory WHERE category = #{category}
+    </select>
+
+    <update id="updateQuantity">
+        UPDATE supply_inventory SET quantity = #{quantity}, last_updated = NOW() WHERE supply_id = #{supplyId}
+    </update>
+
+    <select id="searchSupplies" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE item_name LIKE CONCAT('%', #{keyword}, '%') ORDER BY category, item_name
+    </select>
+
+    <select id="selectByShelterIdAndCategory" resultMap="BaseResultMap">
+        SELECT * FROM supply_inventory WHERE shelter_id = #{shelterId} AND category = #{category} ORDER BY item_name
+    </select>
+
+</mapper>

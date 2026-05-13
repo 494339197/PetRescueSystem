@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.ShelterMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.Shelter">
+        <id column="shelter_id" property="shelterId" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="logo_url" property="logoUrl" jdbcType="VARCHAR"/>
+        <result column="province" property="province" jdbcType="VARCHAR"/>
+        <result column="city" property="city" jdbcType="VARCHAR"/>
+        <result column="district" property="district" jdbcType="VARCHAR"/>
+        <result column="detail_address" property="detailAddress" jdbcType="VARCHAR"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="contact_person" property="contactPerson" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="capacity" property="capacity" jdbcType="INTEGER"/>
+        <result column="current_count" property="currentCount" jdbcType="INTEGER"/>
+        <result column="longitude" property="longitude" jdbcType="DECIMAL"/>
+        <result column="latitude" property="latitude" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="selectByCity" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE city = #{city} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByProvince" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE province = #{province} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE status = #{status} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectShelterPage" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE 1=1
+        <if test="province != null and province != ''">AND province = #{province}</if>
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="status != null">AND status = #{status}</if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countByCity" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM shelter WHERE city = #{city}
+    </select>
+
+    <update id="updateCurrentCount">
+        UPDATE shelter SET current_count = (SELECT COUNT(*) FROM animal WHERE shelter_id = #{shelterId}) WHERE shelter_id = #{shelterId}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE shelter SET status = #{status} WHERE shelter_id = #{shelterId}
+    </update>
+
+    <select id="searchShelters" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE name LIKE CONCAT('%', #{keyword}, '%') OR city LIKE CONCAT('%', #{keyword}, '%') OR detail_address LIKE CONCAT('%', #{keyword}, '%') ORDER BY created_at DESC
+    </select>
+
+    <select id="selectActiveShelters" resultMap="BaseResultMap">
+        SELECT * FROM shelter WHERE status = 1 ORDER BY created_at DESC
+    </select>
+
+</mapper>

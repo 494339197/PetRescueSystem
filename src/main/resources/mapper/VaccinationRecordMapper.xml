@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.VaccinationRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.VaccinationRecord">
+        <id column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="vaccine_type" property="vaccineType" jdbcType="VARCHAR"/>
+        <result column="admin_date" property="adminDate" jdbcType="DATE"/>
+        <result column="next_due_date" property="nextDueDate" jdbcType="DATE"/>
+        <result column="vet_name" property="vetName" jdbcType="VARCHAR"/>
+        <result column="clinic" property="clinic" jdbcType="VARCHAR"/>
+        <result column="notes" property="notes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="selectByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE animal_id = #{animalId} ORDER BY admin_date DESC
+    </select>
+
+    <select id="selectByVaccineType" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE vaccine_type = #{vaccineType} ORDER BY admin_date DESC
+    </select>
+
+    <select id="selectVaccinationPage" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE 1=1
+        <if test="animalId != null">AND animal_id = #{animalId}</if>
+        <if test="startDate != null">AND admin_date >= #{startDate}</if>
+        <if test="endDate != null">AND admin_date &lt;= #{endDate}</if>
+        ORDER BY admin_date DESC
+    </select>
+
+    <select id="selectByDateRange" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE admin_date BETWEEN #{startDate} AND #{endDate} ORDER BY admin_date DESC
+    </select>
+
+    <select id="selectDueVaccinations" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE next_due_date IS NOT NULL AND next_due_date &lt;= CURDATE() ORDER BY next_due_date ASC
+    </select>
+
+    <select id="selectRecentByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM vaccination_record WHERE animal_id = #{animalId} ORDER BY admin_date DESC LIMIT #{limit}
+    </select>
+
+    <select id="countByAnimalId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM vaccination_record WHERE animal_id = #{animalId}
+    </select>
+
+    <select id="countByVaccineType" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM vaccination_record WHERE vaccine_type = #{vaccineType}
+    </select>
+
+</mapper>

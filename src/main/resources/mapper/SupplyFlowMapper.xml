@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.SupplyFlowMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.SupplyFlow">
+        <id column="flow_id" property="flowId" jdbcType="BIGINT"/>
+        <result column="supply_id" property="supplyId" jdbcType="BIGINT"/>
+        <result column="change_type" property="changeType" jdbcType="INTEGER"/>
+        <result column="quantity" property="quantity" jdbcType="INTEGER"/>
+        <result column="reason" property="reason" jdbcType="VARCHAR"/>
+        <result column="related_donation_id" property="relatedDonationId" jdbcType="BIGINT"/>
+        <result column="operator_user_id" property="operatorUserId" jdbcType="BIGINT"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="selectBySupplyId" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow WHERE supply_id = #{supplyId} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByChangeType" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow WHERE change_type = #{changeType} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByOperatorUserId" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow WHERE operator_user_id = #{operatorUserId} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectSupplyFlowPage" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow WHERE 1=1
+        <if test="supplyId != null">AND supply_id = #{supplyId}</if>
+        <if test="changeType != null">AND change_type = #{changeType}</if>
+        <if test="startDate != null">AND created_at >= #{startDate}</if>
+        <if test="endDate != null">AND created_at &lt;= #{endDate}</if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByDateRange" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow WHERE created_at BETWEEN #{startDate} AND #{endDate} ORDER BY created_at DESC
+    </select>
+
+    <select id="countBySupplyId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM supply_flow WHERE supply_id = #{supplyId}
+    </select>
+
+    <select id="selectRecentFlows" resultMap="BaseResultMap">
+        SELECT * FROM supply_flow ORDER BY created_at DESC LIMIT #{limit}
+    </select>
+
+</mapper>

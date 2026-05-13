@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.RescueReportMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.RescueReport">
+        <id column="report_id" property="reportId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="reporter_user_id" property="reporterUserId" jdbcType="BIGINT"/>
+        <result column="reporter_name" property="reporterName" jdbcType="VARCHAR"/>
+        <result column="reporter_phone" property="reporterPhone" jdbcType="VARCHAR"/>
+        <result column="rescue_location" property="rescueLocation" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="urgent_level" property="urgentLevel" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="shelter_id" property="shelterId" jdbcType="BIGINT"/>
+        <result column="reported_at" property="reportedAt" jdbcType="TIMESTAMP"/>
+        <result column="handled_at" property="handledAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="selectByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE animal_id = #{animalId} ORDER BY reported_at DESC
+    </select>
+
+    <select id="selectByReporterUserId" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE reporter_user_id = #{reporterUserId} ORDER BY reported_at DESC
+    </select>
+
+    <select id="selectByShelterId" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE shelter_id = #{shelterId} ORDER BY reported_at DESC
+    </select>
+
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE status = #{status} ORDER BY reported_at DESC
+    </select>
+
+    <select id="selectByUrgentLevel" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE urgent_level = #{urgentLevel} ORDER BY reported_at DESC
+    </select>
+
+    <select id="selectRescueReportPage" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE 1=1
+        <if test="shelterId != null">AND shelter_id = #{shelterId}</if>
+        <if test="status != null">AND status = #{status}</if>
+        <if test="urgentLevel != null">AND urgent_level = #{urgentLevel}</if>
+        ORDER BY reported_at DESC
+    </select>
+
+    <select id="countByShelterId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM rescue_report WHERE shelter_id = #{shelterId}
+    </select>
+
+    <select id="countByStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM rescue_report WHERE status = #{status}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE rescue_report SET status = #{status}, shelter_id = #{shelterId}, handled_at = NOW() WHERE report_id = #{reportId}
+    </update>
+
+    <select id="selectPendingUrgentReports" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report WHERE status = 0 AND urgent_level >= 4 ORDER BY urgent_level DESC, reported_at ASC
+    </select>
+
+    <select id="selectRecentReports" resultMap="BaseResultMap">
+        SELECT * FROM rescue_report ORDER BY reported_at DESC LIMIT #{limit}
+    </select>
+
+</mapper>

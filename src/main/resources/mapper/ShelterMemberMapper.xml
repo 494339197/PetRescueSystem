@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.ShelterMemberMapper">
+
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.ShelterMember">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="shelter_id" property="shelterId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="role" property="role" jdbcType="INTEGER"/>
+        <result column="join_date" property="joinDate" jdbcType="DATE"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <select id="selectByShelterId" resultMap="BaseResultMap">
+        SELECT * FROM shelter_member WHERE shelter_id = #{shelterId} ORDER BY join_date DESC
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM shelter_member WHERE user_id = #{userId} ORDER BY join_date DESC
+    </select>
+
+    <select id="selectByRole" resultMap="BaseResultMap">
+        SELECT * FROM shelter_member WHERE role = #{role} ORDER BY join_date DESC
+    </select>
+
+    <select id="selectByShelterAndUser" resultMap="BaseResultMap">
+        SELECT * FROM shelter_member WHERE shelter_id = #{shelterId} AND user_id = #{userId} LIMIT 1
+    </select>
+
+    <select id="countByShelterId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM shelter_member WHERE shelter_id = #{shelterId}
+    </select>
+
+    <select id="countByRole" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM shelter_member WHERE role = #{role}
+    </select>
+
+    <update id="updateRole">
+        UPDATE shelter_member SET role = #{role} WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE shelter_member SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <select id="selectByShelterIdAndRole" resultMap="BaseResultMap">
+        SELECT * FROM shelter_member WHERE shelter_id = #{shelterId} AND role = #{role} ORDER BY join_date DESC
+    </select>
+
+</mapper>
