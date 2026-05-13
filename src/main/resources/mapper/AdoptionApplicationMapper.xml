@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.AdoptionApplicationMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.AdoptionApplication">
+        <id column="application_id" property="applicationId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="applicant_user_id" property="applicantUserId" jdbcType="BIGINT"/>
+        <result column="applicant_name" property="applicantName" jdbcType="VARCHAR"/>
+        <result column="id_card" property="idCard" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="housing_type" property="housingType" jdbcType="TINYINT"/>
+        <result column="has_fenced_yard" property="hasFencedYard" jdbcType="TINYINT"/>
+        <result column="family_agree" property="familyAgree" jdbcType="TINYINT"/>
+        <result column="pet_experience" property="petExperience" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="reviewed_by" property="reviewedBy" jdbcType="BIGINT"/>
+        <result column="review_notes" property="reviewNotes" jdbcType="VARCHAR"/>
+        <result column="applied_at" property="appliedAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 根据动物ID查询领养申请列表 -->
+    <select id="selectByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE animal_id = #{animalId}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- 根据申请人ID查询领养申请列表 -->
+    <select id="selectByApplicantUserId" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE applicant_user_id = #{applicantUserId}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- 根据状态查询领养申请列表 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE status = #{status}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- 分页查询领养申请列表 -->
+    <select id="selectApplicationPage" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE 1=1
+        <if test="animalId != null">
+            AND animal_id = #{animalId}
+        </if>
+        <if test="applicantUserId != null">
+            AND applicant_user_id = #{applicantUserId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- 统计指定动物的申请数量 -->
+    <select id="countByAnimalId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM adoption_application 
+        WHERE animal_id = #{animalId}
+    </select>
+
+    <!-- 统计指定用户的申请数量 -->
+    <select id="countByApplicantUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM adoption_application 
+        WHERE applicant_user_id = #{applicantUserId}
+    </select>
+
+    <!-- 更新申请状态 -->
+    <update id="updateStatus">
+        UPDATE adoption_application 
+        SET status = #{status},
+            reviewed_by = #{reviewedBy},
+            review_notes = #{reviewNotes},
+            updated_at = NOW()
+        WHERE application_id = #{applicationId}
+    </update>
+
+    <!-- 查询指定动物的待处理申请 -->
+    <select id="selectPendingApplicationsByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE animal_id = #{animalId} 
+          AND status = 0  -- 0表示待处理状态
+        ORDER BY applied_at ASC
+    </select>
+
+    <!-- 查询用户最近提交的申请 -->
+    <select id="selectRecentApplicationsByUser" resultMap="BaseResultMap">
+        SELECT * FROM adoption_application 
+        WHERE applicant_user_id = #{applicantUserId}
+        ORDER BY applied_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

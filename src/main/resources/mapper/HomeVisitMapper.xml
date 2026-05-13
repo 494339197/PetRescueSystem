@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.HomeVisitMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.HomeVisit">
+        <id column="visit_id" property="visitId" jdbcType="BIGINT"/>
+        <result column="application_id" property="applicationId" jdbcType="BIGINT"/>
+        <result column="visitor_user_id" property="visitorUserId" jdbcType="BIGINT"/>
+        <result column="visit_date" property="visitDate" jdbcType="TIMESTAMP"/>
+        <result column="environment_score" property="environmentScore" jdbcType="INTEGER"/>
+        <result column="impression" property="impression" jdbcType="VARCHAR"/>
+        <result column="photos" property="photos" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 家访记录详情结果映射 -->
+    <resultMap id="HomeVisitDetailResultMap" type="com.petrescue.petrescuesystem.mapper.HomeVisitMapper$HomeVisitDetail">
+        <id column="visit_id" property="visitId" jdbcType="BIGINT"/>
+        <result column="application_id" property="applicationId" jdbcType="BIGINT"/>
+        <result column="visitor_user_id" property="visitorUserId" jdbcType="BIGINT"/>
+        <result column="visit_date" property="visitDate" jdbcType="TIMESTAMP"/>
+        <result column="environment_score" property="environmentScore" jdbcType="INTEGER"/>
+        <result column="impression" property="impression" jdbcType="VARCHAR"/>
+        <result column="photos" property="photos" jdbcType="VARCHAR"/>
+        <result column="applicant_name" property="applicantName" jdbcType="VARCHAR"/>
+        <result column="animal_name" property="animalName" jdbcType="VARCHAR"/>
+        <result column="visitor_name" property="visitorName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 根据申请ID查询家访记录 -->
+    <select id="selectByApplicationId" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        WHERE application_id = #{applicationId}
+    </select>
+
+    <!-- 根据家访人ID查询家访记录 -->
+    <select id="selectByVisitorUserId" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        WHERE visitor_user_id = #{visitorUserId}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 分页查询家访记录 -->
+    <select id="selectHomeVisitPage" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        WHERE 1=1
+        <if test="applicationId != null">
+            AND application_id = #{applicationId}
+        </if>
+        <if test="visitorUserId != null">
+            AND visitor_user_id = #{visitorUserId}
+        </if>
+        <if test="startDate != null">
+            AND visit_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND visit_date &lt;= #{endDate}
+        </if>
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 查询指定日期范围内的家访记录 -->
+    <select id="selectByVisitDateRange" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        WHERE visit_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 统计家访人的家访次数 -->
+    <select id="countByVisitorUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM home_visit 
+        WHERE visitor_user_id = #{visitorUserId}
+    </select>
+
+    <!-- 查询最近的家访记录 -->
+    <select id="selectRecentHomeVisits" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        ORDER BY visit_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询环境评分高的家访记录 -->
+    <select id="selectHighScoreVisits" resultMap="BaseResultMap">
+        SELECT * FROM home_visit 
+        WHERE environment_score >= #{minScore}
+        ORDER BY environment_score DESC, visit_date DESC
+    </select>
+
+    <!-- 更新家访照片 -->
+    <update id="updatePhotos">
+        UPDATE home_visit 
+        SET photos = #{photos}
+        WHERE visit_id = #{visitId}
+    </update>
+
+    <!-- 更新家访环境评分 -->
+    <update id="updateEnvironmentScore">
+        UPDATE home_visit 
+        SET environment_score = #{environmentScore}, impression = #{impression}
+        WHERE visit_id = #{visitId}
+    </update>
+
+    <!-- 查询需要家访的申请（申请提交后N天内没有家访） -->
+    <select id="selectApplicationsNeedHomeVisit" resultType="java.lang.Long">
+        SELECT DISTINCT application_id FROM adoption_application aa
+        WHERE NOT EXISTS (
+            SELECT 1 FROM home_visit hv 
+            WHERE hv.application_id = aa.application_id
+        )
+        AND aa.application_date &lt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        AND aa.status = 1  -- 申请状态为待处理
+    </select>
+
+    <!-- 统计各环境评分的家访数量 -->
+    <select id="countByEnvironmentScore" resultType="com.petrescue.petrescuesystem.mapper.HomeVisitMapper$EnvironmentScoreCount">
+        SELECT environment_score, COUNT(*) as count 
+        FROM home_visit 
+        GROUP BY environment_score
+        ORDER BY environment_score DESC
+    </select>
+
+    <!-- 查询家访记录及其关联的申请信息 -->
+    <select id="selectHomeVisitDetail" resultMap="HomeVisitDetailResultMap">
+        SELECT 
+            hv.*,
+            u1.username as applicant_name,
+            a.name as animal_name,
+            u2.username as visitor_name
+        FROM home_visit hv
+        LEFT JOIN adoption_application aa ON hv.application_id = aa.application_id
+        LEFT JOIN user u1 ON aa.applicant_user_id = u1.user_id
+        LEFT JOIN animal a ON aa.animal_id = a.animal_id
+        LEFT JOIN user u2 ON hv.visitor_user_id = u2.user_id
+        WHERE hv.visit_id = #{visitId}
+    </select>
+
+</mapper>

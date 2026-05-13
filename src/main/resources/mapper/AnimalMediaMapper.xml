@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.AnimalMediaMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.AnimalMedia">
+        <id column="media_id" property="mediaId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="uploaded_at" property="uploadedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 根据动物ID查询媒体文件列表 -->
+    <select id="selectByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM animal_media 
+        WHERE animal_id = #{animalId}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- 根据动物ID查询最新的媒体文件 -->
+    <select id="selectRecentByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM animal_media 
+        WHERE animal_id = #{animalId}
+        ORDER BY uploaded_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计指定动物的媒体文件数量 -->
+    <select id="countByAnimalId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM animal_media 
+        WHERE animal_id = #{animalId}
+    </select>
+
+    <!-- 删除指定动物的所有媒体文件 -->
+    <delete id="deleteByAnimalId">
+        DELETE FROM animal_media 
+        WHERE animal_id = #{animalId}
+    </delete>
+
+    <!-- 批量插入媒体文件 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO animal_media (animal_id, url, uploaded_at) 
+        VALUES 
+        <foreach collection="mediaList" item="media" separator=",">
+            (#{media.animalId}, #{media.url}, #{media.uploadedAt})
+        </foreach>
+    </insert>
+
+    <!-- 查询最近上传的媒体文件 -->
+    <select id="selectRecentlyUploaded" resultMap="BaseResultMap">
+        SELECT * FROM animal_media 
+        ORDER BY uploaded_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据URL查询媒体文件 -->
+    <select id="selectByUrl" resultMap="BaseResultMap">
+        SELECT * FROM animal_media 
+        WHERE url = #{url}
+    </select>
+
+    <!-- 更新媒体文件的URL -->
+    <update id="updateMediaUrl">
+        UPDATE animal_media 
+        SET url = #{newUrl}
+        WHERE media_id = #{mediaId}
+    </update>
+
+</mapper>

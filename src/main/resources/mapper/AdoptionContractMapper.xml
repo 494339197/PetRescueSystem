@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.AdoptionContractMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.AdoptionContract">
+        <id column="contract_id" property="contractId" jdbcType="BIGINT"/>
+        <result column="application_id" property="applicationId" jdbcType="BIGINT"/>
+        <result column="contract_no" property="contractNo" jdbcType="VARCHAR"/>
+        <result column="sign_date" property="signDate" jdbcType="DATE"/>
+        <result column="adopter_sign_url" property="adopterSignUrl" jdbcType="VARCHAR"/>
+        <result column="shelter_sign_url" property="shelterSignUrl" jdbcType="VARCHAR"/>
+        <result column="file_url" property="fileUrl" jdbcType="VARCHAR"/>
+        <result column="trial_period_days" property="trialPeriodDays" jdbcType="INTEGER"/>
+        <result column="trial_end_date" property="trialEndDate" jdbcType="DATE"/>
+    </resultMap>
+
+    <!-- 根据申请ID查询领养合同 -->
+    <select id="selectByApplicationId" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE application_id = #{applicationId}
+    </select>
+
+    <!-- 根据合同编号查询领养合同 -->
+    <select id="selectByContractNo" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE contract_no = #{contractNo}
+    </select>
+
+    <!-- 分页查询领养合同列表 -->
+    <select id="selectContractPage" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE 1=1
+        <if test="contractNo != null and contractNo != ''">
+            AND contract_no LIKE CONCAT('%', #{contractNo}, '%')
+        </if>
+        <if test="startDate != null">
+            AND sign_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND sign_date &lt;= #{endDate}
+        </if>
+        ORDER BY sign_date DESC, contract_id DESC
+    </select>
+
+    <!-- 查询指定日期范围内的领养合同 -->
+    <select id="selectBySignDateRange" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE sign_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY sign_date ASC, contract_id ASC
+    </select>
+
+    <!-- 查询试用期即将结束的合同 -->
+    <select id="selectTrialEndingContracts" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE trial_end_date IS NOT NULL 
+          AND trial_end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY trial_end_date ASC
+    </select>
+
+    <!-- 查询已过试用期的合同 -->
+    <select id="selectExpiredTrialContracts" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        WHERE trial_end_date IS NOT NULL 
+          AND trial_end_date &lt; CURDATE()
+        ORDER BY trial_end_date DESC
+    </select>
+
+    <!-- 更新合同文件URL -->
+    <update id="updateFileUrl">
+        UPDATE adoption_contract 
+        SET file_url = #{fileUrl}
+        WHERE contract_id = #{contractId}
+    </update>
+
+    <!-- 更新领养人签名URL -->
+    <update id="updateAdopterSignUrl">
+        UPDATE adoption_contract 
+        SET adopter_sign_url = #{adopterSignUrl}
+        WHERE contract_id = #{contractId}
+    </update>
+
+    <!-- 更新救助站签名URL -->
+    <update id="updateShelterSignUrl">
+        UPDATE adoption_contract 
+        SET shelter_sign_url = #{shelterSignUrl}
+        WHERE contract_id = #{contractId}
+    </update>
+
+    <!-- 统计指定日期范围内的合同数量 -->
+    <select id="countBySignDateRange" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM adoption_contract 
+        WHERE sign_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 查询最近签订的合同 -->
+    <select id="selectRecentContracts" resultMap="BaseResultMap">
+        SELECT * FROM adoption_contract 
+        ORDER BY sign_date DESC, contract_id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

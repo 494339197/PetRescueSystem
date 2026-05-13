@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.CommentMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.Comment">
+        <id column="comment_id" property="commentId" jdbcType="BIGINT"/>
+        <result column="post_id" property="postId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="reply_to_user_id" property="replyToUserId" jdbcType="BIGINT"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 根据帖子ID查询评论列表 -->
+    <select id="selectByPostId" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE post_id = #{postId}
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- 根据用户ID查询评论列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询帖子的根评论（非回复评论） -->
+    <select id="selectRootCommentsByPostId" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE post_id = #{postId} 
+          AND parent_id IS NULL
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- 查询评论的回复列表 -->
+    <select id="selectRepliesByParentId" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE parent_id = #{parentId}
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- 分页查询评论列表 -->
+    <select id="selectCommentPage" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE 1=1
+        <if test="postId != null">
+            AND post_id = #{postId}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 统计帖子的评论数量 -->
+    <select id="countByPostId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM comment 
+        WHERE post_id = #{postId}
+    </select>
+
+    <!-- 统计用户的评论数量 -->
+    <select id="countByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM comment 
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 更新评论点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE comment 
+        SET like_count = #{likeCount}
+        WHERE comment_id = #{commentId}
+    </update>
+
+    <!-- 增加评论点赞数 -->
+    <update id="incrementLikeCount">
+        UPDATE comment 
+        SET like_count = like_count + 1
+        WHERE comment_id = #{commentId}
+    </update>
+
+    <!-- 减少评论点赞数 -->
+    <update id="decrementLikeCount">
+        UPDATE comment 
+        SET like_count = GREATEST(like_count - 1, 0)
+        WHERE comment_id = #{commentId}
+    </update>
+
+    <!-- 查询热门评论（按点赞数排序） -->
+    <select id="selectPopularComments" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE post_id = #{postId}
+        ORDER BY like_count DESC, created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询最近评论 -->
+    <select id="selectRecentComments" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据关键字搜索评论内容 -->
+    <select id="searchComments" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE content LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY 
+            CASE 
+                WHEN content LIKE CONCAT(#{keyword}, '%') THEN 1
+                ELSE 2
+            END,
+            created_at DESC
+    </select>
+
+    <!-- 删除评论及其所有回复 -->
+    <delete id="deleteCommentAndReplies">
+        DELETE FROM comment 
+        WHERE comment_id = #{commentId} 
+           OR parent_id = #{commentId}
+    </delete>
+
+    <!-- 查询用户被回复的评论 -->
+    <select id="selectRepliesToUser" resultMap="BaseResultMap">
+        SELECT * FROM comment 
+        WHERE reply_to_user_id = #{replyToUserId}
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

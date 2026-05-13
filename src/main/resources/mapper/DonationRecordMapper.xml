@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.DonationRecordMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.DonationRecord">
+        <id column="donation_id" property="donationId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="donor_name" property="donorName" jdbcType="VARCHAR"/>
+        <result column="donor_phone" property="donorPhone" jdbcType="VARCHAR"/>
+        <result column="donation_type" property="donationType" jdbcType="INTEGER"/>
+        <result column="amount" property="amount" jdbcType="DECIMAL"/>
+        <result column="goods_name" property="goodsName" jdbcType="VARCHAR"/>
+        <result column="goods_quantity" property="goodsQuantity" jdbcType="VARCHAR"/>
+        <result column="tracking_number" property="trackingNumber" jdbcType="VARCHAR"/>
+        <result column="payment_method" property="paymentMethod" jdbcType="INTEGER"/>
+        <result column="is_anonymous" property="isAnonymous" jdbcType="INTEGER"/>
+        <result column="message" property="message" jdbcType="VARCHAR"/>
+        <result column="donated_at" property="donatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 根据用户ID查询捐赠记录 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE user_id = #{userId}
+        ORDER BY donated_at DESC
+    </select>
+
+    <!-- 根据捐赠类型查询捐赠记录 -->
+    <select id="selectByDonationType" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE donation_type = #{donationType}
+        ORDER BY donated_at DESC
+    </select>
+
+    <!-- 分页查询捐赠记录 -->
+    <select id="selectDonationPage" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE 1=1
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="donationType != null">
+            AND donation_type = #{donationType}
+        </if>
+        <if test="startDate != null">
+            AND donated_at >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND donated_at &lt;= #{endDate}
+        </if>
+        ORDER BY donated_at DESC
+    </select>
+
+    <!-- 查询指定日期范围内的捐赠记录 -->
+    <select id="selectByDonationDateRange" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE donated_at BETWEEN #{startDate} AND #{endDate}
+        ORDER BY donated_at DESC
+    </select>
+
+    <!-- 统计用户捐赠总额 -->
+    <select id="sumAmountByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM donation_record 
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计指定日期范围内的捐赠总额 -->
+    <select id="sumAmountByDateRange" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM donation_record 
+        WHERE donated_at BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 统计各捐赠类型的捐赠总额 -->
+    <select id="sumAmountByDonationType" resultType="com.petrescue.petrescuesystem.mapper.DonationRecordMapper$DonationTypeSum">
+        SELECT donation_type, COALESCE(SUM(amount), 0) as totalAmount 
+        FROM donation_record 
+        GROUP BY donation_type
+        ORDER BY totalAmount DESC
+    </select>
+
+    <!-- 统计捐赠记录数量 -->
+    <select id="countDonations" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM donation_record 
+        <where>
+            <if test="userId != null">
+                user_id = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询最近捐赠记录 -->
+    <select id="selectRecentDonations" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        ORDER BY donated_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询大额捐赠记录（超过指定金额） -->
+    <select id="selectLargeDonations" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE amount > #{minAmount}
+        ORDER BY amount DESC
+    </select>
+
+    <!-- 更新捐赠记录物流单号 -->
+    <update id="updateTrackingNumber">
+        UPDATE donation_record 
+        SET tracking_number = #{trackingNumber}
+        WHERE donation_id = #{donationId}
+    </update>
+
+    <!-- 查询匿名捐赠记录 -->
+    <select id="selectAnonymousDonations" resultMap="BaseResultMap">
+        SELECT * FROM donation_record 
+        WHERE is_anonymous = 1
+        ORDER BY donated_at DESC
+    </select>
+
+</mapper>

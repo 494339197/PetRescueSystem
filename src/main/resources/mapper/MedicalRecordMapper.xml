@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.MedicalRecordMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.MedicalRecord">
+        <id column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="visit_date" property="visitDate" jdbcType="DATE"/>
+        <result column="hospital_name" property="hospitalName" jdbcType="VARCHAR"/>
+        <result column="vet_name" property="vetName" jdbcType="VARCHAR"/>
+        <result column="diagnosis" property="diagnosis" jdbcType="VARCHAR"/>
+        <result column="treatment" property="treatment" jdbcType="VARCHAR"/>
+        <result column="medication" property="medication" jdbcType="VARCHAR"/>
+        <result column="next_visit" property="nextVisit" jdbcType="DATE"/>
+        <result column="notes" property="notes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 医疗记录详情结果映射 -->
+    <resultMap id="MedicalRecordDetailResultMap" type="com.petrescue.petrescuesystem.mapper.MedicalRecordMapper$MedicalRecordDetail">
+        <id column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <result column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="visit_date" property="visitDate" jdbcType="DATE"/>
+        <result column="hospital_name" property="hospitalName" jdbcType="VARCHAR"/>
+        <result column="vet_name" property="vetName" jdbcType="VARCHAR"/>
+        <result column="diagnosis" property="diagnosis" jdbcType="VARCHAR"/>
+        <result column="treatment" property="treatment" jdbcType="VARCHAR"/>
+        <result column="medication" property="medication" jdbcType="VARCHAR"/>
+        <result column="next_visit" property="nextVisit" jdbcType="DATE"/>
+        <result column="notes" property="notes" jdbcType="VARCHAR"/>
+        <result column="animal_name" property="animalName" jdbcType="VARCHAR"/>
+        <result column="species" property="species" jdbcType="VARCHAR"/>
+        <result column="breed" property="breed" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 根据动物ID查询医疗记录 -->
+    <select id="selectByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE animal_id = #{animalId}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 分页查询医疗记录 -->
+    <select id="selectMedicalRecordPage" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE 1=1
+        <if test="animalId != null">
+            AND animal_id = #{animalId}
+        </if>
+        <if test="startDate != null">
+            AND visit_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND visit_date &lt;= #{endDate}
+        </if>
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 查询指定日期范围内的医疗记录 -->
+    <select id="selectByVisitDateRange" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE visit_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 查询动物的最近医疗记录 -->
+    <select id="selectRecentByAnimalId" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE animal_id = #{animalId}
+        ORDER BY visit_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计动物的医疗记录数量 -->
+    <select id="countByAnimalId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM medical_record 
+        WHERE animal_id = #{animalId}
+    </select>
+
+    <!-- 查询需要复诊的医疗记录 -->
+    <select id="selectNeedFollowUp" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE next_visit IS NOT NULL 
+          AND next_visit &lt;= CURDATE()
+        ORDER BY next_visit ASC
+    </select>
+
+    <!-- 查询指定医院的所有医疗记录 -->
+    <select id="selectByHospitalName" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE hospital_name LIKE CONCAT('%', #{hospitalName}, '%')
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 查询指定兽医的所有医疗记录 -->
+    <select id="selectByVetName" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE vet_name LIKE CONCAT('%', #{vetName}, '%')
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 根据诊断关键词搜索医疗记录 -->
+    <select id="searchByDiagnosis" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE diagnosis LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 根据治疗关键词搜索医疗记录 -->
+    <select id="searchByTreatment" resultMap="BaseResultMap">
+        SELECT * FROM medical_record 
+        WHERE treatment LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 更新复诊日期 -->
+    <update id="updateNextVisit">
+        UPDATE medical_record 
+        SET next_visit = #{nextVisit}
+        WHERE record_id = #{recordId}
+    </update>
+
+    <!-- 批量插入医疗记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO medical_record (animal_id, visit_date, hospital_name, vet_name, diagnosis, treatment, medication, next_visit, notes) 
+        VALUES 
+        <foreach collection="medicalRecords" item="record" separator=",">
+            (#{record.animalId}, #{record.visitDate}, #{record.hospitalName}, #{record.vetName}, #{record.diagnosis}, #{record.treatment}, #{record.medication}, #{record.nextVisit}, #{record.notes})
+        </foreach>
+    </insert>
+
+    <!-- 统计各医院的医疗记录数量 -->
+    <select id="countByHospital" resultType="com.petrescue.petrescuesystem.mapper.MedicalRecordMapper$HospitalCount">
+        SELECT hospital_name, COUNT(*) as count 
+        FROM medical_record 
+        GROUP BY hospital_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各兽医的医疗记录数量 -->
+    <select id="countByVet" resultType="com.petrescue.petrescuesystem.mapper.MedicalRecordMapper$VetCount">
+        SELECT vet_name, COUNT(*) as count 
+        FROM medical_record 
+        GROUP BY vet_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询医疗记录详情（包含动物信息） -->
+    <select id="selectMedicalRecordDetail" resultMap="MedicalRecordDetailResultMap">
+        SELECT 
+            mr.*,
+            a.name as animal_name,
+            a.species as species,
+            a.breed as breed
+        FROM medical_record mr
+        LEFT JOIN animal a ON mr.animal_id = a.animal_id
+        WHERE mr.record_id = #{recordId}
+    </select>
+
+</mapper>

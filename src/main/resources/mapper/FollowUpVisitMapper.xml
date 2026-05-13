@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.FollowUpVisitMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.FollowUpVisit">
+        <id column="followup_id" property="followupId" jdbcType="BIGINT"/>
+        <result column="contract_id" property="contractId" jdbcType="BIGINT"/>
+        <result column="visitor_user_id" property="visitorUserId" jdbcType="BIGINT"/>
+        <result column="visit_date" property="visitDate" jdbcType="DATE"/>
+        <result column="photos" property="photos" jdbcType="VARCHAR"/>
+        <result column="satisfaction" property="satisfaction" jdbcType="INTEGER"/>
+        <result column="notes" property="notes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 根据合同ID查询回访记录 -->
+    <select id="selectByContractId" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        WHERE contract_id = #{contractId}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 根据回访人ID查询回访记录 -->
+    <select id="selectByVisitorUserId" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        WHERE visitor_user_id = #{visitorUserId}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 分页查询回访记录 -->
+    <select id="selectFollowUpVisitPage" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        WHERE 1=1
+        <if test="contractId != null">
+            AND contract_id = #{contractId}
+        </if>
+        <if test="visitorUserId != null">
+            AND visitor_user_id = #{visitorUserId}
+        </if>
+        <if test="startDate != null">
+            AND visit_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND visit_date &lt;= #{endDate}
+        </if>
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 查询指定日期范围内的回访记录 -->
+    <select id="selectByVisitDateRange" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        WHERE visit_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY visit_date DESC
+    </select>
+
+    <!-- 统计合同的回访次数 -->
+    <select id="countByContractId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM follow_up_visit 
+        WHERE contract_id = #{contractId}
+    </select>
+
+    <!-- 统计回访人的回访次数 -->
+    <select id="countByVisitorUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM follow_up_visit 
+        WHERE visitor_user_id = #{visitorUserId}
+    </select>
+
+    <!-- 查询最近的回访记录 -->
+    <select id="selectRecentFollowUpVisits" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        ORDER BY visit_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询满意度高的回访记录 -->
+    <select id="selectHighSatisfactionVisits" resultMap="BaseResultMap">
+        SELECT * FROM follow_up_visit 
+        WHERE satisfaction >= #{minSatisfaction}
+        ORDER BY satisfaction DESC, visit_date DESC
+    </select>
+
+    <!-- 更新回访照片 -->
+    <update id="updatePhotos">
+        UPDATE follow_up_visit 
+        SET photos = #{photos}
+        WHERE followup_id = #{followupId}
+    </update>
+
+    <!-- 更新回访满意度 -->
+    <update id="updateSatisfaction">
+        UPDATE follow_up_visit 
+        SET satisfaction = #{satisfaction}, notes = #{notes}
+        WHERE followup_id = #{followupId}
+    </update>
+
+    <!-- 查询需要回访的合同（最近N天内没有回访） -->
+    <select id="selectContractsNeedFollowUp" resultType="java.lang.Long">
+        SELECT DISTINCT contract_id FROM adoption_contract ac
+        WHERE NOT EXISTS (
+            SELECT 1 FROM follow_up_visit fuv 
+            WHERE fuv.contract_id = ac.contract_id 
+            AND fuv.visit_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        )
+        AND ac.contract_date &lt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+    </select>
+
+    <!-- 统计各满意度的回访数量 -->
+    <select id="countBySatisfaction" resultType="com.petrescue.petrescuesystem.mapper.FollowUpVisitMapper$SatisfactionCount">
+        SELECT satisfaction, COUNT(*) as count 
+        FROM follow_up_visit 
+        GROUP BY satisfaction
+        ORDER BY satisfaction DESC
+    </select>
+
+</mapper>

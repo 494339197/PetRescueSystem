@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petrescue.petrescuesystem.mapper.AnimalMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.petrescue.petrescuesystem.entity.Animal">
+        <id column="animal_id" property="animalId" jdbcType="BIGINT"/>
+        <result column="chip_number" property="chipNumber" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="species" property="species" jdbcType="TINYINT"/>
+        <result column="breed" property="breed" jdbcType="VARCHAR"/>
+        <result column="gender" property="gender" jdbcType="TINYINT"/>
+        <result column="age" property="age" jdbcType="VARCHAR"/>
+        <result column="weight" property="weight" jdbcType="DECIMAL"/>
+        <result column="size" property="size" jdbcType="TINYINT"/>
+        <result column="sterilized" property="sterilized" jdbcType="TINYINT"/>
+        <result column="vaccinated" property="vaccinated" jdbcType="TINYINT"/>
+        <result column="health_status" property="healthStatus" jdbcType="VARCHAR"/>
+        <result column="personality" property="personality" jdbcType="VARCHAR"/>
+        <result column="rescue_story" property="rescueStory" jdbcType="VARCHAR"/>
+        <result column="shelter_id" property="shelterId" jdbcType="BIGINT"/>
+        <result column="rescue_date" property="rescueDate" jdbcType="DATE"/>
+        <result column="adoption_status" property="adoptionStatus" jdbcType="TINYINT"/>
+        <result column="created_by" property="createdBy" jdbcType="BIGINT"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 统计结果映射 -->
+    <resultMap id="AnimalStatusCountResultMap" type="com.petrescue.petrescuesystem.mapper.AnimalMapper$AnimalStatusCount">
+        <result column="adoption_status" property="adoptionStatus" jdbcType="TINYINT"/>
+        <result column="count" property="count" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 根据救助站ID查询动物列表 -->
+    <select id="selectByShelterId" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE shelter_id = #{shelterId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据领养状态查询动物列表 -->
+    <select id="selectByAdoptionStatus" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE adoption_status = #{adoptionStatus}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据物种查询动物列表 -->
+    <select id="selectBySpecies" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE species = #{species}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 分页查询动物列表 -->
+    <select id="selectAnimalPage" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE 1=1
+        <if test="shelterId != null">
+            AND shelter_id = #{shelterId}
+        </if>
+        <if test="species != null">
+            AND species = #{species}
+        </if>
+        <if test="adoptionStatus != null">
+            AND adoption_status = #{adoptionStatus}
+        </if>
+        <if test="sterilized != null">
+            AND sterilized = #{sterilized}
+        </if>
+        <if test="vaccinated != null">
+            AND vaccinated = #{vaccinated}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据芯片号查询动物 -->
+    <select id="selectByChipNumber" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE chip_number = #{chipNumber}
+    </select>
+
+    <!-- 查询可领养的动物列表 -->
+    <select id="selectAvailableForAdoption" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE adoption_status = 0  -- 0表示可领养状态
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询最近救助的动物 -->
+    <select id="selectRecentlyRescued" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE rescue_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY rescue_date DESC
+    </select>
+
+    <!-- 查询待领养的动物数量 -->
+    <select id="countAvailableForAdoption" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM animal 
+        WHERE adoption_status = 0  -- 0表示可领养状态
+    </select>
+
+    <!-- 统计救助站动物数量 -->
+    <select id="countByShelterId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM animal 
+        WHERE shelter_id = #{shelterId}
+    </select>
+
+    <!-- 统计各领养状态的动物数量 -->
+    <select id="countByAdoptionStatus" resultMap="AnimalStatusCountResultMap">
+        SELECT adoption_status, COUNT(*) as count 
+        FROM animal 
+        GROUP BY adoption_status
+        ORDER BY adoption_status ASC
+    </select>
+
+    <!-- 更新动物领养状态 -->
+    <update id="updateAdoptionStatus">
+        UPDATE animal 
+        SET adoption_status = #{adoptionStatus},
+            updated_at = NOW()
+        WHERE animal_id = #{animalId}
+    </update>
+
+    <!-- 更新动物健康状态 -->
+    <update id="updateHealthStatus">
+        UPDATE animal 
+        SET health_status = #{healthStatus},
+            updated_at = NOW()
+        WHERE animal_id = #{animalId}
+    </update>
+
+    <!-- 查询热门动物（按申请数量排序） -->
+    <select id="selectPopularAnimals" resultMap="BaseResultMap">
+        SELECT a.*, COUNT(aa.application_id) as application_count
+        FROM animal a
+        LEFT JOIN adoption_application aa ON a.animal_id = aa.animal_id
+        WHERE a.adoption_status = 0  -- 只统计可领养动物
+        GROUP BY a.animal_id
+        ORDER BY application_count DESC, a.created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据关键字搜索动物 -->
+    <select id="searchAnimals" resultMap="BaseResultMap">
+        SELECT * FROM animal 
+        WHERE (
+            name LIKE CONCAT('%', #{keyword}, '%')
+            OR breed LIKE CONCAT('%', #{keyword}, '%')
+            OR health_status LIKE CONCAT('%', #{keyword}, '%')
+            OR personality LIKE CONCAT('%', #{keyword}, '%')
+            OR rescue_story LIKE CONCAT('%', #{keyword}, '%')
+        )
+        AND adoption_status = 0  -- 只搜索可领养动物
+        ORDER BY 
+            CASE 
+                WHEN name LIKE CONCAT('%', #{keyword}, '%') THEN 1
+                WHEN breed LIKE CONCAT('%', #{keyword}, '%') THEN 2
+                ELSE 3
+            END,
+            created_at DESC
+    </select>
+
+</mapper>
